@@ -1,0 +1,65 @@
+body{
+    font-family: Arial , sans-serif ;
+    margin: 0;
+    display: flex;
+    height: 100vh;
+}
+
+#middle-container{
+    display:flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex: 3;
+    height: 100%;
+}
+
+.edge-container{
+    display:flex;
+    flex-direction: column;
+    flex:1;
+    justify-content: center;
+    justify-items: center;
+    height: 100%;
+    background-color: #002460;
+}
+
+#canvas-container {
+    display: flex;
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    width: 100%;
+    height: 100%; /* Ensure the container takes full height if needed */
+    position: relative; /* To control positioning of children */
+}
+
+canvas {
+    display: block;
+    border: 1px solid black;
+    background-color: #6699CC;
+}
+
+
+#button-container{
+    background-color: #6699CC;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex:1.5;
+    flex-direction: row;
+    justify-content : center;
+    align-items: center;
+}
+
+button{
+    height: 30%;
+    width: 30%;
+    margin: 5%;
+    border-radius: 5px;
+    background-color: #6699CC;
+}
+button:hover{
+    transition:0.5s;
+    background-color: #336699 ;
+
+}
