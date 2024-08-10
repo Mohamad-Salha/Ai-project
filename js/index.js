@@ -3,8 +3,8 @@ const ctx = canvas.getContext('2d');
 const container = document.getElementById('canvas-container');
 
 // Maze parameters
-const rows = 10; // Adjust the number of rows
-const cols = 10; // Adjust the number of columns
+const rows = 4; // Adjust the number of rows
+const cols = 4; // Adjust the number of columns
 
 // Calculate cell size to ensure maze fits within the container
 const cellSize = Math.min(container.clientWidth / cols, container.clientHeight / rows);
@@ -36,7 +36,7 @@ startIcon.src = 'images/icons8-person-30.png';
 const endIcon = new Image();
 endIcon.src = 'images/icons8-goal-32.png';
 
-startIcon.onload = endIcon.onload = function() {
+startIcon.onload = endIcon.onload = function () {
     drawMaze();
 };
 
@@ -69,7 +69,7 @@ function drawMaze() {
 }
 
 function getRandomNeighbor(cell) {
-    const { x, y } = cell;
+    const {x, y} = cell;
     const neighbors = [];
 
     if (y > 0 && !grid[y - 1][x].visited) neighbors.push(grid[y - 1][x]); // Top
@@ -130,142 +130,62 @@ function generateMaze() {
 generateMaze();
 
 
+document.getElementById('sss').addEventListener('click', function () {
+    findPath(grid[0][0],grid[cols-1][rows -1]);
+});
 
-function bfs(start, end) {
-    let queue = [start];
-    let visited = new Set();
-    visited.add(start);
-    let parentMap = new Map();
 
-    while (queue.length > 0) {
-        let current = queue.shift();
-
-        // If we've reached the end point, reconstruct and return the path
-        if (current === end) {
-            let path = [];
-            while (current !== start) {
-                path.push(current);
-                current = parentMap.get(current);
-            }
-            path.push(start);
-            path.reverse();
-            return path;
-        }
-
-        // Get valid neighbors
-        let neighbors = getValidNeighbors(current);
-        for (let neighbor of neighbors) {
-            if (!visited.has(neighbor)) {
-                queue.push(neighbor);
-                visited.add(neighbor);
-                parentMap.set(neighbor, current); // Map the neighbor to its parent
-            }
-        }
-    }
-
-    // If no path is found
-    return null;
-}
-
+// Use the getValidNeighbors function from the previous BFS code
 function getValidNeighbors(cell) {
-    const { x, y } = cell;
-    const neighbors = [];
+    let {x, y} = cell;
+    let neighbors = [];
 
-    // Check top
-    if (y > 0 && !cell.walls[0] && !grid[y - 1][x].visited) {
-        neighbors.push(grid[y - 1][x]);
-    }
-    // Check right
-    if (x < cols - 1 && !cell.walls[1] && !grid[y][x + 1].visited) {
-        neighbors.push(grid[y][x + 1]);
-    }
-    // Check bottom
-    if (y < rows - 1 && !cell.walls[2] && !grid[y + 1][x].visited) {
-        neighbors.push(grid[y + 1][x]);
-    }
-    // Check left
-    if (x > 0 && !cell.walls[3] && !grid[y][x - 1].visited) {
-        neighbors.push(grid[y][x - 1]);
-    }
+    if (!cell.walls[1] && x < cols - 1) neighbors.push(grid[y][x + 1]); // Right
+    if (!cell.walls[2] && y < rows - 1) neighbors.push(grid[y + 1][x]); // Bottom
+    if (!cell.walls[0] && y > 0) neighbors.push(grid[y - 1][x]); // Top
+    if (!cell.walls[3] && x > 0) neighbors.push(grid[y][x - 1]); // Left
 
     return neighbors;
 }
 
-function drawPath(path) {
-    for (let i = 0; i < path.length - 1; i++) {
-        const current = path[i];
-        const next = path[i + 1];
-        const x1 = current.x * cellSize + cellSize / 2;
-        const y1 = current.y * cellSize + cellSize / 2;
-        const x2 = next.x * cellSize + cellSize / 2;
-        const y2 = next.y * cellSize + cellSize / 2;
 
-        ctx.strokeStyle = 'blue';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
+function findPath(cell,endPath) {
+    let set = new Set();
+    let queue = [];
+    queue.push(cell);
+    set.add(cell);
+
+    while (queue.length > 0) {
+
+        // Shift the first element from the queue to be the current cell
+        let currentCell = queue.shift();
+
+        // Get valid neighbors of the current cell
+        let n = getValidNeighbors(currentCell);
+
+        for (let i = 0; i < n.length; i++) {
+            if (!set.has(n[i])) {
+                console.log("the cell " + "( " + n[i].x + "," + n[i].y + ")" + " is not in the set");
+                set.add(n[i]);
+                if(n[i] === endPath){
+                    console.log("the cell " + "( " + n[i].x + "," + n[i].y + ")" + " is the goal");
+                    queue=[];
+                    break;
+                }
+
+                // Prioritize the first neighbor by setting it as the next cell to process
+                queue.unshift(n[i]);
+
+                // Push the remaining neighbors to the end of the queue
+                for (let j = i + 1; j < n.length; j++) {
+                    if (!set.has(n[j])) {
+                        set.add(n[j]);
+                        queue.push(n[j]);
+                    }
+                }
+
+                break; // Exit the loop after processing the first neighbor
+            }
+        }
     }
 }
-
-// Run BFS and draw the path
-document.getElementById('buttonRandom').addEventListener('click', function() {
-    const path = bfs(startPoint, endPoint);
-
-    if (path) {
-        drawPath(path);
-    } else {
-        console.log("No path found!");
-    }
-});
-
-
-//this code for testing tomorrow
-
-// function bfs(startCell, targetCell) {
-//     // Define the directions for moving: right, down, left, up
-//     const directions = [
-//         {dx: 1, dy: 0, wallIndex: 1}, // Right
-//         {dx: 0, dy: 1, wallIndex: 2}, // Down
-//         {dx: -1, dy: 0, wallIndex: 3}, // Left
-//         {dx: 0, dy: -1, wallIndex: 0}  // Up
-//     ];
-//
-//     let queue = [{cell: startCell, path: [startCell]}];
-//     let visited = new Set();
-//     visited.add(`${startCell.x},${startCell.y}`);
-//
-//     while (queue.length > 0) {
-//         let {cell, path} = queue.shift();
-//
-//         if (cell.x === targetCell.x && cell.y === targetCell.y) {
-//             return path; // Path found
-//         }
-//
-//         for (let direction of directions) {
-//             let newX = cell.x + direction.dx;
-//             let newY = cell.y + direction.dy;
-//
-//             // Check boundaries
-//             if (newX < 0 || newY < 0 || newX >= gridWidth || newY >= gridHeight) {
-//                 continue;
-//             }
-//
-//             let neighbor = grid[newY][newX]; // Assume grid is a 2D array of cells
-//
-//             // Check if the move is blocked by a wall
-//             if (cell.walls[direction.wallIndex] || neighbor.walls[(direction.wallIndex + 2) % 4]) {
-//                 continue;
-//             }
-//
-//             let key = `${newX},${newY}`;
-//             if (!visited.has(key)) {
-//                 visited.add(key);
-//                 queue.push({cell: neighbor, path: path.concat(neighbor)});
-//             }
-//         }
-//     }
-//
-//     return null; // No path found
-// }
