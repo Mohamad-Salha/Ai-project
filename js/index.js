@@ -26,8 +26,8 @@ for (let y = 0; y < rows; y++) {
     }
 }
 
-const startPoint = grid[0][0];
-const endPoint = grid[rows - 1][cols - 1];
+const startPoint = grid[7][6];
+const endPoint = grid[rows - 7][cols - 8];
 
 const startIcon = new Image();
 startIcon.src = 'images/icons8-person-30.png';
@@ -127,15 +127,19 @@ function generateMaze() {
     drawMaze();
 }
 
-generateMaze();
+function resetMaze() {
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            grid[y][x] = {
+                x: x,
+                y: y,
+                walls: [true, true, true, true], // Reset all walls
+                visited: false // Reset visited flag
+            };
+        }
+    }
+}
 
-
-document.getElementById('sss').addEventListener('click', function () {
-    findPath(grid[0][0],grid[cols-1][rows -1]);
-});
-
-
-// Use the getValidNeighbors function from the previous BFS code
 function getValidNeighbors(cell) {
     let {x, y} = cell;
     let neighbors = [];
@@ -148,56 +152,33 @@ function getValidNeighbors(cell) {
     return neighbors;
 }
 
+document.getElementById('buttonRandom').addEventListener('click', () => {
+    document.getElementById("counter-container").style.display = 'none';
+    resetMaze();
+    generateMaze();
+});
 
-function findPath(cell,endPath) {
-    let set = new Set();
-    let queue = [];
-    queue.push(cell);
-    set.add(cell);
-
-    while (queue.length > 0) {
-
-        // Shift the first element from the queue to be the current cell
-        let currentCell = queue.shift();
-
-        // Get valid neighbors of the current cell
-        let n = getValidNeighbors(currentCell);
-
-        for (let i = 0; i < n.length; i++) {
-            if (!set.has(n[i])) {
-                console.log("the cell " + "( " + n[i].x + "," + n[i].y + ")" + " is not in the set");
-                set.add(n[i]);
-                if(n[i] === endPath){
-                    console.log("the cell " + "( " + n[i].x + "," + n[i].y + ")" + " is the goal");
-                    queue=[];
-                    break;
-                }
-
-                // Prioritize the first neighbor by setting it as the next cell to process
-                queue.unshift(n[i]);
-
-                // Push the remaining neighbors to the end of the queue
-                for (let j = i + 1; j < n.length; j++) {
-                    if (!set.has(n[j])) {
-                        set.add(n[j]);
-                        queue.push(n[j]);
-                    }
-                }
-
-                break; 
-            }
-        }
-    }
-}
 function ucs(start, end) {
-    let priorityQueue = [{ cell: start, cost: 0 }];
+    let priorityQueue = [{cell: start, cost: 0}];
     let visited = new Set();
     let parentMap = new Map();
+    let steps = 0;
 
-    while (priorityQueue.length > 0) {
+    function step() {
+        if (priorityQueue.length === 0) {
+            console.log("No path found.");
+            return;
+        }
+
         // Get the node with the smallest cost
         priorityQueue.sort((a, b) => a.cost - b.cost);
-        let { cell: current, cost } = priorityQueue.shift();
+        let {cell: current, cost} = priorityQueue.shift();
+
+        // Visualize the current step
+        visualizeStep(current);
+
+        steps++; // Increment the step counter
+        document.getElementById('counter').textContent = `Steps: ${steps}`; // Update the label
 
         if (current === end) {
             // Reconstruct the path
@@ -208,7 +189,10 @@ function ucs(start, end) {
             }
             path.push(start);
             path.reverse();
-            return path;
+
+            console.log("Number of steps to reach the goal:", steps);
+            drawPath(path); // Draw the final path
+            return;
         }
 
         visited.add(current);
@@ -217,17 +201,27 @@ function ucs(start, end) {
         let neighbors = getValidNeighbors(current);
         for (let neighbor of neighbors) {
             if (!visited.has(neighbor)) {
-                priorityQueue.push({ cell: neighbor, cost: cost + 1 });
+                priorityQueue.push({cell: neighbor, cost: cost + 1});
                 parentMap.set(neighbor, current);
             }
         }
+
+        // Schedule the next step
+        setTimeout(step, 100); // Adjust the delay (in milliseconds) as needed
     }
 
-    // If no path is found
-    return null;
+    // Start the first step
+    step();
 }
+function visualizeStep(cell) {
+    const x = cell.x * cellSize + cellSize / 2;
+    const y = cell.y * cellSize + cellSize / 2;
 
-
+    ctx.fillStyle = 'yellow';
+    ctx.beginPath();
+    ctx.arc(x, y, cellSize / 4, 0, 2 * Math.PI);
+    ctx.fill();
+}
 function drawPath(path) {
     for (let i = 0; i < path.length - 1; i++) {
         const current = path[i];
@@ -245,14 +239,86 @@ function drawPath(path) {
         ctx.stroke();
     }
 }
-
-document.getElementById('buttonRandom').addEventListener('click', () => {
-    const path = ucs(startPoint, endPoint);
-    if (path) {
-        drawPath(path);
+document.addEventListener('DOMContentLoaded', () => {
+    const button1 = document.getElementById('buttonRandom');
+    const button2 = document.getElementById('buttonBuild');
+    const next = document.getElementById('next');
+    function enableButton3() {
+        next.disabled = false;
+        next.style.cursor = 'pointer';
     }
+    button1.addEventListener('click', enableButton3);
+    button2.addEventListener('click', enableButton3);
+});
+document.getElementById('buttonBuild').addEventListener('click', () => {
+    document.getElementById("counter-container").style.display = 'flex';
+});
+function showAlgoButtons() {
+    const buttons = document.querySelectorAll('.algo-buttons');
+    buttons.forEach(button => {
+        button.style.display = 'flex';
+    });
+}
+function hideAlgoButtons() {
+    const buttons = document.querySelectorAll('.algo-buttons');
+    buttons.forEach(button => {
+        button.style.display = 'none';
+    });
+}
+function hideFirstPage() {
+    const button1 = document.getElementById('buttonRandom');
+    const button2 = document.getElementById('buttonBuild');
+    const button3 = document.getElementById('next');
+    button1.style.display = 'none';
+    button2.style.display = 'none';
+    button3.style.display = 'none';
+}
+function showFirstPage() {
+    const button1 = document.getElementById('buttonRandom');
+    const button2 = document.getElementById('buttonBuild');
+    const button3 = document.getElementById('next');
+    button1.style.display = 'flex';
+    button2.style.display = 'flex';
+    button3.style.display = 'flex';
+}
+function showHeuristic() {
+    const button1 = document.getElementById("heuristic1");
+    const button2 = document.getElementById("heuristic2");
+    const back = document.getElementById("previous");
+    button1.style.display = 'flex';
+    button2.style.display = 'flex';
+    back.style.display = 'flex';
+}
+function hideHeuristic() {
+    const button1 = document.getElementById("heuristic1");
+    const button2 = document.getElementById("heuristic2");
+    const back = document.getElementById("previous");
+    button1.style.display = 'none';
+    button2.style.display = 'none';
+    back.style.display = 'none';
+}
+
+document.getElementById('next').addEventListener('click', () => {
+    hideFirstPage();
+    showAlgoButtons();
+});
+document.getElementById('from2To1').addEventListener('click', () => {
+    showFirstPage();
+    hideAlgoButtons();
+});
+document.getElementById('previous').addEventListener('click', () => {
+    showAlgoButtons();
+    hideHeuristic();
+});
+document.getElementById('button1').addEventListener('click', () => {
+    hideAlgoButtons();
+    showHeuristic();
+});
+document.getElementById('button3').addEventListener('click', () => {
+    hideAlgoButtons();
+    showHeuristic();
 });
 
-document.getElementById('buildOwn').addEventListener('click', () => {
-    // Logic for building your own maze
+document.getElementById('button2').addEventListener('click', () => {
+    ucs(startPoint,endPoint);
 });
