@@ -3,8 +3,8 @@ const ctx = canvas.getContext('2d');
 const container = document.getElementById('canvas-container');
 
 // Maze parameters
-const rows = 4; // Adjust the number of rows
-const cols = 4; // Adjust the number of columns
+const rows = 20; // Adjust the number of rows
+const cols = 20; // Adjust the number of columns
 
 // Calculate cell size to ensure maze fits within the container
 const cellSize = Math.min(container.clientWidth / cols, container.clientHeight / rows);
@@ -184,8 +184,75 @@ function findPath(cell,endPath) {
                     }
                 }
 
-                break; // Exit the loop after processing the first neighbor
+                break; 
             }
         }
     }
 }
+function ucs(start, end) {
+    let priorityQueue = [{ cell: start, cost: 0 }];
+    let visited = new Set();
+    let parentMap = new Map();
+
+    while (priorityQueue.length > 0) {
+        // Get the node with the smallest cost
+        priorityQueue.sort((a, b) => a.cost - b.cost);
+        let { cell: current, cost } = priorityQueue.shift();
+
+        if (current === end) {
+            // Reconstruct the path
+            let path = [];
+            while (current !== start) {
+                path.push(current);
+                current = parentMap.get(current);
+            }
+            path.push(start);
+            path.reverse();
+            return path;
+        }
+
+        visited.add(current);
+
+        // Get valid neighbors
+        let neighbors = getValidNeighbors(current);
+        for (let neighbor of neighbors) {
+            if (!visited.has(neighbor)) {
+                priorityQueue.push({ cell: neighbor, cost: cost + 1 });
+                parentMap.set(neighbor, current);
+            }
+        }
+    }
+
+    // If no path is found
+    return null;
+}
+
+
+function drawPath(path) {
+    for (let i = 0; i < path.length - 1; i++) {
+        const current = path[i];
+        const next = path[i + 1];
+        const x1 = current.x * cellSize + cellSize / 2;
+        const y1 = current.y * cellSize + cellSize / 2;
+        const x2 = next.x * cellSize + cellSize / 2;
+        const y2 = next.y * cellSize + cellSize / 2;
+
+        ctx.strokeStyle = 'blue';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+}
+
+document.getElementById('buttonRandom').addEventListener('click', () => {
+    const path = ucs(startPoint, endPoint);
+    if (path) {
+        drawPath(path);
+    }
+});
+
+document.getElementById('buildOwn').addEventListener('click', () => {
+    // Logic for building your own maze
+});
