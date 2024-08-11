@@ -164,111 +164,55 @@ function drawPath(path) {
 
 document.getElementById('buttonRandom').addEventListener('click', function () {
     clearFlag = false;
-    build=false;
+    build = false;
     generateMaze(); // Generate a new maze when the button is clicked
 });
 document.getElementById('buttonBuild').addEventListener('click', function () {
     clearFlag = false;
-    build=true;
+    build = true;
     resetGridForUserDefinedMaze();
     clearFlag = true;
     drawMaze();
+});
+
+document.getElementById('next').addEventListener('click', function () {
+    const path = bestFirstSearch(startPoint, endPoint);
+    if (path) {
+        drawPath(path);
+    } else {
+        console.log("No Path");
+    }
 });
 
 function manhattanDistance(cell1, cell2) {
     return Math.abs(cell1.x - cell2.x) + Math.abs(cell1.y - cell2.y);
 }
 
-function bestFirstSearch() {
-    let openSet = [startPoint];
-    let closedSet = [];
-    let steps = 0;
-
-    function step() {
-        if (openSet.length === 0) {
-            console.log('No path found.');
-            return;
-        }
-
-        // Get the node with the smallest heuristic value (h)
-        let lowestIndex = 0;
-        for (let i = 0; i < openSet.length; i++) {
-            if (openSet[i].h < openSet[lowestIndex].h) {
-                lowestIndex = i;
-            }
-        }
-
-        let current = openSet[lowestIndex];
-
-        if (current === endPoint) {
-            console.log('Done!');
-            let path = reconstructPath(current);
-            drawPath(path);
-            return;
-        }
-
-        openSet = openSet.filter(el => el !== current);
-        closedSet.push(current);
-
-        let neighbors = getValidNeighbors(current);
-        for (let neighbor of neighbors) {
-            if (closedSet.includes(neighbor)) {
-                continue;
-            }
-
-            if (!openSet.includes(neighbor)) {
-                neighbor.h = heuristic(neighbor, endPoint); // Calculate heuristic
-                openSet.push(neighbor);
-                neighbor.parent = current;
-            }
-        }
-
-        steps++; // Increment the step counter
-        document.getElementById('counter').textContent = `Steps: ${steps}`; // Update the label
-
-        visualizeStep(current); // Visualize the current step
-
-        // Schedule the next step
-        setTimeout(step, 100); // Adjust the delay (in milliseconds) as needed
-    }
-
-    // Start the first step
-    step();
-}
-
-function reconstructPath(current) {
-    let path = [];
-    let temp = current;
-    while (temp) {
-        path.push(temp);
-        temp = temp.parent;
-    }
-    path.reverse();
-    return path;
-}
-
-function visualizeStep(cell) {
-    const x = cell.x * cellSize + cellSize / 2;
-    const y = cell.y * cellSize + cellSize / 2;
-
-    ctx.fillStyle = 'yellow';
-    ctx.beginPath();
-    ctx.arc(x, y, cellSize / 4, 0, 2 * Math.PI);
-    ctx.fill();
-}
-
-function ucs(start, end) {
-    let priorityQueue = [{cell: grid[start.y][start.x], cost: 0}];
+function bestFirstSearch(start, end) {
+    let priorityQueue = [{cell: grid[start.y][start.x], heuristic: manhattanDistance(start, end)}];
     let visited = new Set();
     let parentMap = new Map();
+    let steps = 0;
+    let counterLabel = document.getElementById("counter");
+    let solutionCounterLabel = document.getElementById("s-counter");
 
-    while (priorityQueue.length > 0) {
-        // Get the node with the smallest cost
-        priorityQueue.sort((a, b) => a.cost - b.cost);
-        let {cell: current, cost} = priorityQueue.shift();
+    function processNextStep() {
+        if (priorityQueue.length === 0) {
+            solutionCounterLabel.textContent = 'Solution Path Steps: 0';
+            return;
+        }
+
+        // Increment and update step counter
+        steps++;
+        updateCounter(counterLabel, steps);
+
+        priorityQueue.sort((a, b) => a.heuristic - b.heuristic);
+        let {cell: current} = priorityQueue.shift();
+
+        // Draw yellow circle for the current cell
+        drawYellowCircle(current);
 
         if (current === grid[end.y][end.x]) {
-            // Reconstruct the path
             let path = [];
             while (current !== grid[start.y][start.x]) {
                 path.push(current);
@@ -276,12 +220,73 @@ function ucs(start, end) {
             }
             path.push(grid[start.y][start.x]);
             path.reverse();
+
+            solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
+            solutionCounterLabel.style.transition = '0.5s ease';
             return path;
         }
 
         visited.add(current);
 
-        // Get valid neighbors
+        let neighbors = getValidNeighbors(current);
+        for (let neighbor of neighbors) {
+            if (!visited.has(neighbor)) {
+                priorityQueue.push({
+                    cell: neighbor,
+                    heuristic: manhattanDistance(neighbor, end)
+                });
+                parentMap.set(neighbor, current);
+            }
+        }
+
+        // Delay the next iteration
+        setTimeout(processNextStep, 100);
+    }
+
+    processNextStep();
+}
+
+
+function ucs(start, end) {
+    let priorityQueue = [{cell: grid[start.y][start.x], cost: 0}];
+    let visited = new Set();
+    let parentMap = new Map();
+    let steps = 0;
+    let counterLabel = document.getElementById("counter");
+    let solutionCounterLabel = document.getElementById("s-counter");
+
+    function processNextStep() {
+        if (priorityQueue.length === 0) {
+            solutionCounterLabel.textContent = 'Solution Path Steps: 0';
+            return;
+        }
+
+        // Increment and update step counter
+        steps++;
+        updateCounter(counterLabel, steps);
+
+        priorityQueue.sort((a, b) => a.cost - b.cost);
+        let {cell: current, cost} = priorityQueue.shift();
+
+        // Draw yellow circle for the current cell
+        drawYellowCircle(current);
+
+        if (current === grid[end.y][end.x]) {
+            let path = [];
+            while (current !== grid[start.y][start.x]) {
+                path.push(current);
+                current = parentMap.get(current);
+            }
+            path.push(grid[start.y][start.x]);
+            path.reverse();
+
+            solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
+            solutionCounterLabel.style.transition = '0.5s ease';
+            return path;
+        }
+
+        visited.add(current);
+
         let neighbors = getValidNeighbors(current);
         for (let neighbor of neighbors) {
             if (!visited.has(neighbor)) {
@@ -289,27 +294,43 @@ function ucs(start, end) {
                 parentMap.set(neighbor, current);
             }
         }
+
+        // Delay the next iteration
+        setTimeout(processNextStep, 100);
     }
 
-    console.log("No path found");
-    return null;
+    processNextStep();
 }
+
 
 function aStar(start, end) {
     let priorityQueue = [{cell: grid[start.y][start.x], cost: 0, heuristic: manhattanDistance(start, end)}];
     let visited = new Set();
     let parentMap = new Map();
-    let costMap = new Map(); // To keep track of the cost to reach each cell
+    let costMap = new Map();
+    let steps = 0;
+    let counterLabel = document.getElementById("counter");
+    let solutionCounterLabel = document.getElementById("s-counter");
 
     costMap.set(grid[start.y][start.x], 0);
 
-    while (priorityQueue.length > 0) {
-        // Get the node with the smallest f value (cost + heuristic)
+    function processNextStep() {
+        if (priorityQueue.length === 0) {
+            solutionCounterLabel.textContent = 'Solution Path Steps: 0';
+            return;
+        }
+
+        // Increment and update step counter
+        steps++;
+        updateCounter(counterLabel, steps);
+
         priorityQueue.sort((a, b) => (a.cost + a.heuristic) - (b.cost + b.heuristic));
         let {cell: current, cost} = priorityQueue.shift();
 
+        // Draw yellow circle for the current cell
+        drawYellowCircle(current);
+
         if (current === grid[end.y][end.x]) {
-            // Reconstruct the path
             let path = [];
             while (current !== grid[start.y][start.x]) {
                 path.push(current);
@@ -317,16 +338,21 @@ function aStar(start, end) {
             }
             path.push(grid[start.y][start.x]);
             path.reverse();
+
+            solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
+            solutionCounterLabel.style.transition = '0.5s ease';
             return path;
         }
 
         visited.add(current);
 
-        // Get valid neighbors
         let neighbors = getValidNeighbors(current);
         for (let neighbor of neighbors) {
-            let newCost = cost + 1; // Assuming each step has a cost of 1
+            let newCost = cost + 1;
             if (!visited.has(neighbor) || newCost < (costMap.get(neighbor) || Infinity)) {
+                if (!visited.has(neighbor)) {
+                    visited.add(neighbor);
+                }
                 costMap.set(neighbor, newCost);
                 priorityQueue.push({
                     cell: neighbor,
@@ -336,11 +362,14 @@ function aStar(start, end) {
                 parentMap.set(neighbor, current);
             }
         }
+
+        // Delay the next iteration
+        setTimeout(processNextStep, 100);
     }
 
-    console.log("No path found");
-    return null;
+    processNextStep();
 }
+
 
 function resetGridForUserDefinedMaze() {
     grid = [];
@@ -358,6 +387,10 @@ function resetGridForUserDefinedMaze() {
 }
 
 document.getElementById('clearCanvas').addEventListener('click', function () {
+    let counterLabel = document.getElementById("counter");
+    let solutionCounterLabel = document.getElementById("s-counter");
+    counterLabel.textContent='Solution Path Steps: 0';
+    solutionCounterLabel.textContent='Test Path Steps: 0';
     resetGridForUserDefinedMaze();
     clearFlag = true;
     drawMaze();// Generate a new maze when the button is clicked
@@ -420,3 +453,20 @@ canvas.addEventListener('click', function (event) {
     }
 });
 
+function drawYellowCircle(cell) {
+    // Assuming you have a function to convert grid coordinates to canvas coordinates
+    const {x, y} = cell;
+    const canvasX = x * cellSize + cellSize / 2;
+    const canvasY = y * cellSize + cellSize / 2;
+
+    ctx.beginPath();
+    ctx.arc(canvasX, canvasY, cellSize / 4, 0, 2 * Math.PI);
+    ctx.fillStyle = 'yellow';
+    ctx.fill();
+    ctx.strokeStyle = 'black';
+    ctx.stroke();
+}
+
+function updateCounter(label, steps) {
+    label.textContent = `Steps: ${steps}`;
+}
