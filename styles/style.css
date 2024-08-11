@@ -65,7 +65,7 @@ button{
     flex: 2;
 }
 #next{
-    cursor: not-allowed;
+
     flex: 0.5;
 }
 .next{
@@ -78,7 +78,7 @@ button:hover{
 
 }
 #counter-container{
-    display: none;
+    display: flex;
     background-color: lightblue;
     width: 100%;
     height: 100%;
@@ -143,4 +143,8 @@ label{
 
 #from2To1{
     flex:0.5;
+}
+
+#clearCanvas{
+    flex:0.2;
 }

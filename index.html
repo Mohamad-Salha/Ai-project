@@ -26,7 +26,11 @@
             <div id="elements-container">
                 <label>
                     <img alt="#" src="images/icons8-wall-32.png">
-                    <input type="radio" name="tool" value="wall" checked> Wall
+                    <input type="radio" id="vertical" name="tool" value="wall" checked> Horizontal
+                </label>
+                <label>
+                    <img alt="#" src="images/icons8-wall-32.png">
+                    <input type="radio" id="horizontal" name="tool" value="wall" checked> Vertical
                 </label>
                 <label>
                     <img alt="#" src="images/icons8-person-30.png">
@@ -37,6 +41,9 @@
                     <input type="radio" name="tool" value="end"> End Point
                 </label>
             </div>
+            <button id="clearCanvas">
+                Clear
+            </button>
         </div>
     </div>
     <div id="button-container">
@@ -46,7 +53,7 @@
         <button id="buttonBuild">
             Build Your Own Maze
         </button>
-        <button id="next" disabled>
+        <button id="next" >
             Next
         </button>
         <button class="algo-buttons" id="from2To1">
