@@ -162,34 +162,65 @@ function drawPath(path) {
     }
 }
 
+let flagForChose =true;
 document.getElementById('buttonRandom').addEventListener('click', function () {
     clearFlag = false;
     build = false;
+    flagForChose =true;
     generateMaze(); // Generate a new maze when the button is clicked
 });
 document.getElementById('buttonBuild').addEventListener('click', function () {
     clearFlag = false;
     build = true;
+    flagForChose=false;
     resetGridForUserDefinedMaze();
     clearFlag = true;
     drawMaze();
 });
 
-document.getElementById('next').addEventListener('click', function () {
-    const path = bestFirstSearch(startPoint, endPoint);
-    if (path) {
-        drawPath(path);
-    } else {
-        console.log("No Path");
-    }
-});
+// document.getElementById('next').addEventListener('click', function () {
+//     const path = bestFirstSearch(startPoint, endPoint);
+//     if (path) {
+//         drawPath(path);
+//     } else {
+//         console.log("No Path");
+//     }
+// });
 
 function manhattanDistance(cell1, cell2) {
     return Math.abs(cell1.x - cell2.x) + Math.abs(cell1.y - cell2.y);
 }
 
+function euclideanDistance(start, end) {
+    if (!start || !end) {
+        console.error('Invalid start or end for Euclidean distance:', { start, end });
+        return Infinity; // Return a large number or handle error
+    }
+
+    const dx = start.x - end.x;
+    const dy = start.y - end.y;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
 function bestFirstSearch(start, end) {
-    let priorityQueue = [{cell: grid[start.y][start.x], heuristic: manhattanDistance(start, end)}];
+    // Validate start and end
+    if (!start || !end) {
+        console.error('Start or end is null or undefined:', { start, end });
+        return;
+    }
+    if (typeof start.x !== 'number' || typeof start.y !== 'number' || typeof end.x !== 'number' || typeof end.y !== 'number') {
+        console.error('Start or end has invalid coordinates:', { start, end });
+        return;
+    }
+    if (!grid[start.y] || !grid[start.y][start.x] || !grid[end.y] || !grid[end.y][end.x]) {
+        console.error('Invalid grid cell:', { gridStart: grid[start.y] && grid[start.y][start.x], gridEnd: grid[end.y] && grid[end.y][end.x] });
+        return;
+    }
+
+    let priorityQueue = [{
+        cell: grid[start.y][start.x],
+        heuristic: calculateHeuristic(start, end)
+    }];
     let visited = new Set();
     let parentMap = new Map();
     let steps = 0;
@@ -206,8 +237,9 @@ function bestFirstSearch(start, end) {
         steps++;
         updateCounter(counterLabel, steps);
 
+        // Sort queue based on heuristic
         priorityQueue.sort((a, b) => a.heuristic - b.heuristic);
-        let {cell: current} = priorityQueue.shift();
+        let { cell: current } = priorityQueue.shift();
 
         // Draw yellow circle for the current cell
         drawYellowCircle(current);
@@ -231,9 +263,15 @@ function bestFirstSearch(start, end) {
         let neighbors = getValidNeighbors(current);
         for (let neighbor of neighbors) {
             if (!visited.has(neighbor)) {
+                let heuristic = calculateHeuristic(neighbor, end);
+
+                // Debugging output
+                console.log('Neighbor:', neighbor);
+                console.log('Heuristic:', heuristic);
+
                 priorityQueue.push({
                     cell: neighbor,
-                    heuristic: manhattanDistance(neighbor, end)
+                    heuristic: heuristic
                 });
                 parentMap.set(neighbor, current);
             }
@@ -245,7 +283,6 @@ function bestFirstSearch(start, end) {
 
     processNextStep();
 }
-
 
 function ucs(start, end) {
     let priorityQueue = [{cell: grid[start.y][start.x], cost: 0}];
@@ -302,9 +339,11 @@ function ucs(start, end) {
     processNextStep();
 }
 
-
 function aStar(start, end) {
-    let priorityQueue = [{cell: grid[start.y][start.x], cost: 0, heuristic: manhattanDistance(start, end)}];
+    let priorityQueue = [{
+        cell: grid[start.y][start.x],
+        heuristic: calculateHeuristic(start, end)
+    }];
     let visited = new Set();
     let parentMap = new Map();
     let costMap = new Map();
@@ -370,7 +409,6 @@ function aStar(start, end) {
     processNextStep();
 }
 
-
 function resetGridForUserDefinedMaze() {
     grid = [];
     for (let y = 0; y < rows; y++) {
@@ -389,16 +427,19 @@ function resetGridForUserDefinedMaze() {
 document.getElementById('clearCanvas').addEventListener('click', function () {
     let counterLabel = document.getElementById("counter");
     let solutionCounterLabel = document.getElementById("s-counter");
-    counterLabel.textContent='Solution Path Steps: 0';
-    solutionCounterLabel.textContent='Test Path Steps: 0';
+    counterLabel.textContent = 'Solution Path Steps: 0';
+    solutionCounterLabel.textContent = 'Test Path Steps: 0';
+    startNode = null;
+    endNodes = [];
     resetGridForUserDefinedMaze();
     clearFlag = true;
     drawMaze();// Generate a new maze when the button is clicked
 });
 
 function drawGrid() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#000';
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+    ctx.strokeStyle = '#000'; // Wall color
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
@@ -411,6 +452,16 @@ function drawGrid() {
             if (cell.walls[1]) ctx.strokeRect(startX + cellSize, startY, 1, cellSize); // Right wall
             if (cell.walls[2]) ctx.strokeRect(startX, startY + cellSize, cellSize, 1); // Bottom wall
             if (cell.walls[3]) ctx.strokeRect(startX, startY, 1, cellSize);           // Left wall
+
+            // Draw the start circle if applicable
+            if (startNode === cell) {
+                drawCircle(ctx, x, y, cellSize / 4, 'red');
+            }
+
+            // Draw the end circles if applicable
+            if (endNodes.includes(cell)) {
+                drawCircle(ctx, x, y, cellSize / 4, 'green');
+            }
         }
     }
 }
@@ -424,9 +475,7 @@ function getSelectedDirection() {
 
 let build = false;
 canvas.addEventListener('click', function (event) {
-
     if (build === true) {
-
         const rect = canvas.getBoundingClientRect();
         const x = Math.floor((event.clientX - rect.left) / cellSize);
         const y = Math.floor((event.clientY - rect.top) / cellSize);
@@ -439,9 +488,25 @@ canvas.addEventListener('click', function (event) {
         }
 
         const direction = getSelectedDirection();
-        if (!direction) return;
+        const mode = getSelectedMode();
+        if (!direction && !mode) return;
 
-        if (direction === 'horizontal' && x < cols - 1) {
+        if (mode === 'start') {
+            if (startNode) {
+                // Optionally clear the previous start node
+                drawGrid(); // Redraw grid to clear previous start circle
+            }
+            startNode = grid[y][x];
+            drawGrid(); // Redraw grid to add new start circle
+        } else if (mode === 'end') {
+            if (endNodes.length < 2) {
+                endNodes.push(grid[y][x]);
+                drawGrid(); // Redraw grid to add new end circle
+            } else {
+                console.warn('Maximum of two end nodes reached.');
+                return;
+            }
+        } else if (direction === 'horizontal' && x < cols - 1) {
             grid[y][x].walls[1] = true;  // Right wall
             grid[y][x + 1].walls[3] = true; // Left wall for the right cell
         } else if (direction === 'vertical' && y < rows - 1) {
@@ -470,3 +535,131 @@ function drawYellowCircle(cell) {
 function updateCounter(label, steps) {
     label.textContent = `Steps: ${steps}`;
 }
+
+let first = document.getElementById('first');
+let second = document.getElementById('second');
+let third = document.getElementById('third');
+let astar = false;
+let bfs = false;
+let heu1 = false;
+let heu2 = false;
+
+document.getElementById('next').addEventListener('click', function () {
+    first.style.display = 'none';
+    second.style.display = 'flex';
+    third.style.display = 'none';
+
+});
+
+document.getElementById('from2To1').addEventListener('click', function () {
+    first.style.display = 'flex';
+    second.style.display = 'none';
+    third.style.display = 'none';
+});
+
+document.getElementById('button1').addEventListener('click', function () {
+    first.style.display = 'none';
+    second.style.display = 'none';
+    third.style.display = 'flex';
+    astar = true;
+    bfs = false;
+});
+
+document.getElementById('button2').addEventListener('click', function () {
+    if(flagForChose){
+        ucs(startPoint, endPoint);
+    }
+    else{
+        ucs(startNode,endNodes);
+    }
+});
+
+document.getElementById('button3').addEventListener('click', function () {
+    first.style.display = 'none';
+    second.style.display = 'none';
+    third.style.display = 'flex';
+    astar = false;
+    bfs = true;
+});
+
+document.getElementById('back').addEventListener('click', function () {
+    first.style.display = 'none';
+    second.style.display = 'flex';
+    third.style.display = 'none';
+});
+
+document.getElementById('heuristic1').addEventListener('click', function () {
+    if (astar === true) {
+        useManhattan = true;
+        if(flagForChose){
+            aStar(startPoint, endPoint);
+        }
+        else{
+            aStar(startNode,endNodes);
+        }
+    } else if (bfs === true) {
+        useManhattan = true;
+        if(flagForChose){
+            bestFirstSearch(startPoint, endPoint);
+        }
+        else{
+            bestFirstSearch(startNode,endNodes);
+        }
+    }
+});
+
+document.getElementById('heuristic2').addEventListener('click', function () {
+    if (astar === true) {
+        useManhattan = false;
+        if(flagForChose){
+            aStar(startPoint, endPoint);
+        }
+        else{
+            aStar(startNode,endNodes);
+        }
+    } else if (bfs === true) {
+        useManhattan = false;
+        if(flagForChose){
+            bestFirstSearch(startPoint, endPoint);
+        }
+        else{
+            bestFirstSearch(startNode,endNodes);
+        }
+
+    }
+});
+
+
+let useManhattan = true;
+
+function calculateHeuristic(start, end) {
+    if (!start || !end) {
+        console.error('Invalid start or end:', { start, end });
+        return Infinity; // Return a large number or handle error
+    }
+
+    console.log('Calculating heuristic for:', { start, end });
+    if (useManhattan) {
+        return manhattanDistance(start, end);
+    } else {
+        return euclideanDistance(start, end);
+    }
+}
+
+let startNode = null;
+let endNodes = [];
+
+function getSelectedMode() {
+    const startMode = document.getElementById('start').checked;
+    const endMode = document.getElementById('end').checked;
+    return startMode ? 'start' : endMode ? 'end' : null;
+}
+
+function drawCircle(ctx, x, y, radius, color) {
+    ctx.beginPath();
+    ctx.arc(x * cellSize + cellSize / 2, y * cellSize + cellSize / 2, radius, 0, 2 * Math.PI);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.closePath();
+}
+

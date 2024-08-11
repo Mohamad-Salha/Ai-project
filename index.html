@@ -37,11 +37,11 @@
                 </label>
                 <label>
                     <img alt="#" src="images/icons8-person-30.png">
-                    <input type="radio" name="tool" value="start"> Start Point
+                    <input type="radio" id="start" name="tool" value="start"> Start Point
                 </label>
                 <label>
                     <img alt="#" src="images/icons8-goal-32.png">
-                    <input type="radio" name="tool" value="end"> End Point
+                    <input type="radio" id="end" name="tool" value="end"> End Point
                 </label>
             </div>
             <button id="clearCanvas">
@@ -50,37 +50,44 @@
         </div>
     </div>
     <div id="button-container">
-        <button id="buttonRandom">
-            Generate Random Maze
-        </button>
-        <button id="buttonBuild">
-            Build Your Own Maze
-        </button>
-        <button id="next" >
-            Next
-        </button>
-        <button class="algo-buttons" id="from2To1">
-            back
-        </button>
-        <button class="algo-buttons" id="button1">
-            A* Algorithm
-        </button>
-        <button class="algo-buttons" id="button2">
-            Uniform Cost Search Algorithm
-        </button>
-        <button class="algo-buttons" id="button3">
-            Best First Search Algorithm
-        </button>
-        <button id="previous">
-            back
-        </button>
+        <div id="first">
+            <button id="buttonRandom">
+                Generate Random Maze
+            </button>
+            <button id="buttonBuild">
+                Build Your Own Maze
+            </button>
+            <button id="next">
+                Next
+            </button>
+        </div>
+        <div id="second">
+            <button id="from2To1">
+                back
+            </button>
+            <button class="algo-buttons" id="button1">
+                A* Algorithm
+            </button>
+            <button class="algo-buttons" id="button2">
+                Uniform Cost Search Algorithm
+            </button>
+            <button class="algo-buttons" id="button3">
+                Best First Search Algorithm
+            </button>
+        </div>
 
-        <button id="heuristic1">
-            Manhattan distance
-        </button>
-        <button id="heuristic2">
-            Euclidean distance
-        </button>
+        <div id="third">
+            <button id="back">
+                back
+            </button>
+
+            <button id="heuristic1">
+                Manhattan distance
+            </button>
+            <button id="heuristic2">
+                Euclidean distance
+            </button>
+        </div>
     </div>
 </div>
 <div class="edge-container"></div>
