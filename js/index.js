@@ -3,11 +3,28 @@ const ctx = canvas.getContext('2d');
 const container = document.getElementById('canvas-container');
 
 // Maze parameters
-const rows = 20; // Adjust the number of rows
-const cols = 20; // Adjust the number of columns
+let rows = 10; // Adjust the number of rows
+let cols = 10; // Adjust the number of columns
 
+const colsInput = document.getElementById('cols');
+const rowsInput = document.getElementById('rows');
+const submitButton = document.getElementById('submit');
+let cellSize = 0;
+// Event listener for the submit button
+submitButton.addEventListener('click', function() {
+    // Get the values from the input fields
+    cols = parseInt(colsInput.value) || 0; // Fallback to 0 if input is empty
+    rows = parseInt(rowsInput.value) || 0; // Fallback to 0 if input is empty
+    cellSize = Math.min(container.clientWidth / cols, container.clientHeight / rows);
+    canvas.width = cols * cellSize;
+    canvas.height = rows * cellSize;
+
+    // Generate and draw the maze
+    generateMaze(cellSize);
+    drawMaze();
+});
 // Calculate cell size to ensure maze fits within the container
-const cellSize = Math.min(container.clientWidth / cols, container.clientHeight / rows);
+
 
 canvas.width = cols * cellSize;
 canvas.height = rows * cellSize;
@@ -144,23 +161,6 @@ function getValidNeighbors(cell) {
     return neighbors;
 }
 
-function drawPath(path) {
-    ctx.strokeStyle = 'blue'; // Set path color to blue
-    ctx.lineWidth = 2; // Set the line width for the path
-    for (let i = 0; i < path.length - 1; i++) {
-        const current = path[i];
-        const next = path[i + 1];
-        const x1 = current.x * cellSize + cellSize / 2;
-        const y1 = current.y * cellSize + cellSize / 2;
-        const x2 = next.x * cellSize + cellSize / 2;
-        const y2 = next.y * cellSize + cellSize / 2;
-
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-    }
-}
 
 let flagForChose =true;
 document.getElementById('buttonRandom').addEventListener('click', function () {
@@ -178,45 +178,18 @@ document.getElementById('buttonBuild').addEventListener('click', function () {
     drawMaze();
 });
 
-// document.getElementById('next').addEventListener('click', function () {
-//     const path = bestFirstSearch(startPoint, endPoint);
-//     if (path) {
-//         drawPath(path);
-//     } else {
-//         console.log("No Path");
-//     }
-// });
 
 function manhattanDistance(cell1, cell2) {
     return Math.abs(cell1.x - cell2.x) + Math.abs(cell1.y - cell2.y);
 }
 
 function euclideanDistance(start, end) {
-    if (!start || !end) {
-        console.error('Invalid start or end for Euclidean distance:', { start, end });
-        return Infinity; // Return a large number or handle error
-    }
-
     const dx = start.x - end.x;
     const dy = start.y - end.y;
     return Math.sqrt(dx * dx + dy * dy);
 }
 
 function bestFirstSearch(start, end) {
-    // Validate start and end
-    if (!start || !end) {
-        console.error('Start or end is null or undefined:', { start, end });
-        return;
-    }
-    if (typeof start.x !== 'number' || typeof start.y !== 'number' || typeof end.x !== 'number' || typeof end.y !== 'number') {
-        console.error('Start or end has invalid coordinates:', { start, end });
-        return;
-    }
-    if (!grid[start.y] || !grid[start.y][start.x] || !grid[end.y] || !grid[end.y][end.x]) {
-        console.error('Invalid grid cell:', { gridStart: grid[start.y] && grid[start.y][start.x], gridEnd: grid[end.y] && grid[end.y][end.x] });
-        return;
-    }
-
     let priorityQueue = [{
         cell: grid[start.y][start.x],
         heuristic: calculateHeuristic(start, end)
@@ -243,20 +216,49 @@ function bestFirstSearch(start, end) {
 
         // Draw yellow circle for the current cell
         drawYellowCircle(current);
+        if(flagForChose){
+            if (current === grid[end.y][end.x]) {
+                let path = [];
+                while (current !== grid[start.y][start.x]) {
+                    path.push(current);
+                    current = parentMap.get(current);
+                }
+                path.push(grid[start.y][start.x]);
+                path.reverse();
 
-        if (current === grid[end.y][end.x]) {
-            let path = [];
-            while (current !== grid[start.y][start.x]) {
-                path.push(current);
-                current = parentMap.get(current);
+                solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
+                solutionCounterLabel.style.transition = '0.5s ease';
+                return path;
             }
-            path.push(grid[start.y][start.x]);
-            path.reverse();
+        }else {
+            if (current === grid[end[0].y][end[0].x]) {
+                let path = [];
+                while (current !== grid[start.y][start.x]) {
+                    path.push(current);
+                    current = parentMap.get(current);
+                }
+                path.push(grid[start.y][start.x]);
+                path.reverse();
 
-            solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
-            solutionCounterLabel.style.transition = '0.5s ease';
-            return path;
+                solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
+                solutionCounterLabel.style.transition = '0.5s ease';
+                return path;
+            }
+            if (current === grid[end[1].y][end[1].x]) {
+                let path = [];
+                while (current !== grid[start.y][start.x]) {
+                    path.push(current);
+                    current = parentMap.get(current);
+                }
+                path.push(grid[start.y][start.x]);
+                path.reverse();
+
+                solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
+                solutionCounterLabel.style.transition = '0.5s ease';
+                return path;
+            }
         }
+
 
         visited.add(current);
 
@@ -305,21 +307,51 @@ function ucs(start, end) {
         priorityQueue.sort((a, b) => a.cost - b.cost);
         let {cell: current, cost} = priorityQueue.shift();
 
-        // Draw yellow circle for the current cell
         drawYellowCircle(current);
+        if(flagForChose){
+            if (current === grid[end.y][end.x]) {
+                // Reconstruct path
+                let path = [];
+                while (current !== grid[start.y][start.x]) {
+                    path.push(current);
+                    current = parentMap.get(current);
+                }
+                path.push(grid[start.y][start.x]);
+                path.reverse();
 
-        if (current === grid[end.y][end.x]) {
-            let path = [];
-            while (current !== grid[start.y][start.x]) {
-                path.push(current);
-                current = parentMap.get(current);
+                solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
+                solutionCounterLabel.style.transition = '0.5s ease';
+                return path;
             }
-            path.push(grid[start.y][start.x]);
-            path.reverse();
+        }else{
+            if (current === grid[end[0].y][end[0].x]) {
+                // Reconstruct path
+                let path = [];
+                while (current !== grid[start.y][start.x]) {
+                    path.push(current);
+                    current = parentMap.get(current);
+                }
+                path.push(grid[start.y][start.x]);
+                path.reverse();
 
-            solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
-            solutionCounterLabel.style.transition = '0.5s ease';
-            return path;
+                solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
+                solutionCounterLabel.style.transition = '0.5s ease';
+                return path;
+            }
+            if (current === grid[end[1].y][end[1].x]) {
+                // Reconstruct path
+                let path = [];
+                while (current !== grid[start.y][start.x]) {
+                    path.push(current);
+                    current = parentMap.get(current);
+                }
+                path.push(grid[start.y][start.x]);
+                path.reverse();
+
+                solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
+                solutionCounterLabel.style.transition = '0.5s ease';
+                return path;
+            }
         }
 
         visited.add(current);
@@ -368,19 +400,46 @@ function aStar(start, end) {
 
         // Draw yellow circle for the current cell
         drawYellowCircle(current);
+        if(flagForChose){
+            if (current === grid[end.y][end.x]) {
+                let path = [];
+                while (current !== grid[start.y][start.x]) {
+                    path.push(current);
+                    current = parentMap.get(current);
+                }
+                path.push(grid[start.y][start.x]);
+                path.reverse();
 
-        if (current === grid[end.y][end.x]) {
-            let path = [];
-            while (current !== grid[start.y][start.x]) {
-                path.push(current);
-                current = parentMap.get(current);
+                solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
+                solutionCounterLabel.style.transition = '0.5s ease';
+                return path;
             }
-            path.push(grid[start.y][start.x]);
-            path.reverse();
+        }else{
+            if (current === grid[end[0].y][end[0].x]) {
+                let path = [];
+                while (current !== grid[start.y][start.x]) {
+                    path.push(current);
+                    current = parentMap.get(current);
+                }
+                path.push(grid[start.y][start.x]);
+                path.reverse();
 
-            solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
-            solutionCounterLabel.style.transition = '0.5s ease';
-            return path;
+                solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
+                solutionCounterLabel.style.transition = '0.5s ease';
+                return path;
+            }
+            if (current === grid[end[1].y][end[1].x]) {
+                let path = [];
+                while (current !== grid[start.y][start.x]) {
+                    path.push(current);
+                    current = parentMap.get(current);
+                }
+                path.push(grid[start.y][start.x]);
+                path.reverse();
+                solutionCounterLabel.textContent = `Solution Path Steps: ${path.length}`;
+                solutionCounterLabel.style.transition = '0.5s ease';
+                return path;
+            }
         }
 
         visited.add(current);
@@ -493,13 +552,14 @@ canvas.addEventListener('click', function (event) {
 
         if (mode === 'start') {
             if (startNode) {
-                // Optionally clear the previous start node
-                drawGrid(); // Redraw grid to clear previous start circle
+                drawGrid();
             }
+            console.log("I reach here" + startNode);
             startNode = grid[y][x];
             drawGrid(); // Redraw grid to add new start circle
         } else if (mode === 'end') {
             if (endNodes.length < 2) {
+                console.log("I reach here" + endNodes);
                 endNodes.push(grid[y][x]);
                 drawGrid(); // Redraw grid to add new end circle
             } else {
@@ -541,8 +601,6 @@ let second = document.getElementById('second');
 let third = document.getElementById('third');
 let astar = false;
 let bfs = false;
-let heu1 = false;
-let heu2 = false;
 
 document.getElementById('next').addEventListener('click', function () {
     first.style.display = 'none';
@@ -592,7 +650,7 @@ document.getElementById('heuristic1').addEventListener('click', function () {
     if (astar === true) {
         useManhattan = true;
         if(flagForChose){
-            aStar(startPoint, endPoint);
+             aStar(startPoint, endPoint);
         }
         else{
             aStar(startNode,endNodes);
@@ -628,7 +686,6 @@ document.getElementById('heuristic2').addEventListener('click', function () {
 
     }
 });
-
 
 let useManhattan = true;
 
