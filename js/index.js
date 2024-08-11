@@ -149,46 +149,6 @@ function getValidNeighbors(cell) {
 }
 
 
-function findPath(cell,endPath) {
-    let set = new Set();
-    let queue = [];
-    queue.push(cell);
-    set.add(cell);
-
-    while (queue.length > 0) {
-
-        // Shift the first element from the queue to be the current cell
-        let currentCell = queue.shift();
-
-        // Get valid neighbors of the current cell
-        let n = getValidNeighbors(currentCell);
-
-        for (let i = 0; i < n.length; i++) {
-            if (!set.has(n[i])) {
-                console.log("the cell " + "( " + n[i].x + "," + n[i].y + ")" + " is not in the set");
-                set.add(n[i]);
-                if(n[i] === endPath){
-                    console.log("the cell " + "( " + n[i].x + "," + n[i].y + ")" + " is the goal");
-                    queue=[];
-                    break;
-                }
-
-                // Prioritize the first neighbor by setting it as the next cell to process
-                queue.unshift(n[i]);
-
-                // Push the remaining neighbors to the end of the queue
-                for (let j = i + 1; j < n.length; j++) {
-                    if (!set.has(n[j])) {
-                        set.add(n[j]);
-                        queue.push(n[j]);
-                    }
-                }
-
-                break; 
-            }
-        }
-    }
-}
 function ucs(start, end) {
     let priorityQueue = [{ cell: start, cost: 0 }];
     let visited = new Set();
@@ -251,8 +211,4 @@ document.getElementById('buttonRandom').addEventListener('click', () => {
     if (path) {
         drawPath(path);
     }
-});
-
-document.getElementById('buildOwn').addEventListener('click', () => {
-    // Logic for building your own maze
 });
