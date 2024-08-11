@@ -14,30 +14,32 @@ canvas.height = rows * cellSize;
 
 // Create the grid
 let grid = [];
-for (let y = 0; y < rows; y++) {
-    grid[y] = [];
-    for (let x = 0; x < cols; x++) {
-        grid[y][x] = {
-            x: x,
-            y: y,
-            walls: [true, true, true, true], // top, right, bottom, left
-            visited: false
-        };
+
+function resetGrid() {
+    grid = [];
+    for (let y = 0; y < rows; y++) {
+        grid[y] = [];
+        for (let x = 0; x < cols; x++) {
+            grid[y][x] = {
+                x: x,
+                y: y,
+                walls: [true, true, true, true], // top, right, bottom, left
+                visited: false
+            };
+        }
     }
 }
 
-const startPoint = grid[0][0];
-const endPoint = grid[rows - 1][cols - 1];
+const startPoint = { x: 0, y: 0 };
+const endPoint = { x: cols - 1, y: rows - 1 };
 
 const startIcon = new Image();
 startIcon.src = 'images/icons8-person-30.png';
-
-// Load the end icon
 const endIcon = new Image();
 endIcon.src = 'images/icons8-goal-32.png';
 
 startIcon.onload = endIcon.onload = function () {
-    drawMaze();
+    generateMaze(); // Generate maze on load
 };
 
 function drawCell(cell) {
@@ -55,6 +57,8 @@ function drawCell(cell) {
 
 function drawMaze() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = 'black'; // Set wall color to black
+    ctx.lineWidth = 1; // Set the line width for the walls
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
             drawCell(grid[y][x]);
@@ -62,14 +66,11 @@ function drawMaze() {
     }
 
     ctx.drawImage(startIcon, startPoint.x * cellSize, startPoint.y * cellSize, cellSize, cellSize);
-
     ctx.drawImage(endIcon, endPoint.x * cellSize, endPoint.y * cellSize, cellSize, cellSize);
-
-
 }
 
 function getRandomNeighbor(cell) {
-    const {x, y} = cell;
+    const { x, y } = cell;
     const neighbors = [];
 
     if (y > 0 && !grid[y - 1][x].visited) neighbors.push(grid[y - 1][x]); // Top
@@ -105,6 +106,8 @@ function removeWalls(current, next) {
 }
 
 function generateMaze() {
+    resetGrid(); // Reset the grid before generating a new maze
+
     let stack = [];
     let current = grid[0][0];
     current.visited = true;
@@ -124,20 +127,11 @@ function generateMaze() {
         }
     }
 
-    drawMaze();
+    drawMaze(); // Redraw the maze after generating a new one
 }
 
-generateMaze();
-
-
-document.getElementById('sss').addEventListener('click', function () {
-    findPath(grid[0][0],grid[cols-1][rows -1]);
-});
-
-
-// Use the getValidNeighbors function from the previous BFS code
 function getValidNeighbors(cell) {
-    let {x, y} = cell;
+    let { x, y } = cell;
     let neighbors = [];
 
     if (!cell.walls[1] && x < cols - 1) neighbors.push(grid[y][x + 1]); // Right
@@ -148,9 +142,8 @@ function getValidNeighbors(cell) {
     return neighbors;
 }
 
-
 function ucs(start, end) {
-    let priorityQueue = [{ cell: start, cost: 0 }];
+    let priorityQueue = [{ cell: grid[start.y][start.x], cost: 0 }];
     let visited = new Set();
     let parentMap = new Map();
 
@@ -159,14 +152,14 @@ function ucs(start, end) {
         priorityQueue.sort((a, b) => a.cost - b.cost);
         let { cell: current, cost } = priorityQueue.shift();
 
-        if (current === end) {
+        if (current === grid[end.y][end.x]) {
             // Reconstruct the path
             let path = [];
-            while (current !== start) {
+            while (current !== grid[start.y][start.x]) {
                 path.push(current);
                 current = parentMap.get(current);
             }
-            path.push(start);
+            path.push(grid[start.y][start.x]);
             path.reverse();
             return path;
         }
@@ -187,8 +180,9 @@ function ucs(start, end) {
     return null;
 }
 
-
 function drawPath(path) {
+    ctx.strokeStyle = 'blue'; // Set path color to blue
+    ctx.lineWidth = 2; // Set the line width for the path
     for (let i = 0; i < path.length - 1; i++) {
         const current = path[i];
         const next = path[i + 1];
@@ -197,8 +191,6 @@ function drawPath(path) {
         const x2 = next.x * cellSize + cellSize / 2;
         const y2 = next.y * cellSize + cellSize / 2;
 
-        ctx.strokeStyle = 'blue';
-        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
@@ -206,8 +198,12 @@ function drawPath(path) {
     }
 }
 
+document.getElementById('sss').addEventListener('click', function () {
+    generateMaze(); // Generate a new maze when the button is clicked
+});
+
 document.getElementById('buttonRandom').addEventListener('click', () => {
-    const path = ucs(startPoint, endPoint);
+    const path = ucs({ x: startPoint.x, y: startPoint.y }, { x: endPoint.x, y: endPoint.y });
     if (path) {
         drawPath(path);
     }
