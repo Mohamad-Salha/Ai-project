@@ -11,7 +11,7 @@ const rowsInput = document.getElementById('rows');
 const submitButton = document.getElementById('submit');
 let cellSize = 0;
 // Event listener for the submit button
-submitButton.addEventListener('click', function() {
+submitButton.addEventListener('click', function () {
     // Get the values from the input fields
     cols = parseInt(colsInput.value) || 0; // Fallback to 0 if input is empty
     rows = parseInt(rowsInput.value) || 0; // Fallback to 0 if input is empty
@@ -162,22 +162,23 @@ function getValidNeighbors(cell) {
 }
 
 
-let flagForChose =true;
+let flagForChose = true;
 document.getElementById('buttonRandom').addEventListener('click', function () {
     clearFlag = false;
     build = false;
-    flagForChose =true;
+    flagForChose = true;
     generateMaze(); // Generate a new maze when the button is clicked
 });
 document.getElementById('buttonBuild').addEventListener('click', function () {
     clearFlag = false;
     build = true;
-    flagForChose=false;
+    flagForChose = false;
     resetGridForUserDefinedMaze();
     clearFlag = true;
     drawMaze();
 });
 
+let color = 0;
 
 function manhattanDistance(cell1, cell2) {
     return Math.abs(cell1.x - cell2.x) + Math.abs(cell1.y - cell2.y);
@@ -212,11 +213,12 @@ function bestFirstSearch(start, end) {
 
         // Sort queue based on heuristic
         priorityQueue.sort((a, b) => a.heuristic - b.heuristic);
-        let { cell: current } = priorityQueue.shift();
+        let {cell: current} = priorityQueue.shift();
 
         // Draw yellow circle for the current cell
+        color = 1;
         drawYellowCircle(current);
-        if(flagForChose){
+        if (flagForChose) {
             if (current === grid[end.y][end.x]) {
                 let path = [];
                 while (current !== grid[start.y][start.x]) {
@@ -230,7 +232,7 @@ function bestFirstSearch(start, end) {
                 solutionCounterLabel.style.transition = '0.5s ease';
                 return path;
             }
-        }else {
+        } else {
             if (current === grid[end[0].y][end[0].x]) {
                 let path = [];
                 while (current !== grid[start.y][start.x]) {
@@ -306,9 +308,9 @@ function ucs(start, end) {
 
         priorityQueue.sort((a, b) => a.cost - b.cost);
         let {cell: current, cost} = priorityQueue.shift();
-
+        color = 2;
         drawYellowCircle(current);
-        if(flagForChose){
+        if (flagForChose) {
             if (current === grid[end.y][end.x]) {
                 // Reconstruct path
                 let path = [];
@@ -323,7 +325,7 @@ function ucs(start, end) {
                 solutionCounterLabel.style.transition = '0.5s ease';
                 return path;
             }
-        }else{
+        } else {
             if (current === grid[end[0].y][end[0].x]) {
                 // Reconstruct path
                 let path = [];
@@ -399,8 +401,9 @@ function aStar(start, end) {
         let {cell: current, cost} = priorityQueue.shift();
 
         // Draw yellow circle for the current cell
+        color = 3;
         drawYellowCircle(current);
-        if(flagForChose){
+        if (flagForChose) {
             if (current === grid[end.y][end.x]) {
                 let path = [];
                 while (current !== grid[start.y][start.x]) {
@@ -414,7 +417,7 @@ function aStar(start, end) {
                 solutionCounterLabel.style.transition = '0.5s ease';
                 return path;
             }
-        }else{
+        } else {
             if (current === grid[end[0].y][end[0].x]) {
                 let path = [];
                 while (current !== grid[start.y][start.x]) {
@@ -586,7 +589,12 @@ function drawYellowCircle(cell) {
 
     ctx.beginPath();
     ctx.arc(canvasX, canvasY, cellSize / 4, 0, 2 * Math.PI);
-    ctx.fillStyle = 'yellow';
+    if (color === 1)
+        ctx.fillStyle = 'yellow';
+    if (color === 2)
+        ctx.fillStyle = 'blue';
+    if (color === 3)
+        ctx.fillStyle = 'red';
     ctx.fill();
     ctx.strokeStyle = 'black';
     ctx.stroke();
@@ -624,11 +632,10 @@ document.getElementById('button1').addEventListener('click', function () {
 });
 
 document.getElementById('button2').addEventListener('click', function () {
-    if(flagForChose){
+    if (flagForChose) {
         ucs(startPoint, endPoint);
-    }
-    else{
-        ucs(startNode,endNodes);
+    } else {
+        ucs(startNode, endNodes);
     }
 });
 
@@ -649,19 +656,17 @@ document.getElementById('back').addEventListener('click', function () {
 document.getElementById('heuristic1').addEventListener('click', function () {
     if (astar === true) {
         useManhattan = true;
-        if(flagForChose){
-             aStar(startPoint, endPoint);
-        }
-        else{
-            aStar(startNode,endNodes);
+        if (flagForChose) {
+            aStar(startPoint, endPoint);
+        } else {
+            aStar(startNode, endNodes);
         }
     } else if (bfs === true) {
         useManhattan = true;
-        if(flagForChose){
+        if (flagForChose) {
             bestFirstSearch(startPoint, endPoint);
-        }
-        else{
-            bestFirstSearch(startNode,endNodes);
+        } else {
+            bestFirstSearch(startNode, endNodes);
         }
     }
 });
@@ -669,19 +674,17 @@ document.getElementById('heuristic1').addEventListener('click', function () {
 document.getElementById('heuristic2').addEventListener('click', function () {
     if (astar === true) {
         useManhattan = false;
-        if(flagForChose){
+        if (flagForChose) {
             aStar(startPoint, endPoint);
-        }
-        else{
-            aStar(startNode,endNodes);
+        } else {
+            aStar(startNode, endNodes);
         }
     } else if (bfs === true) {
         useManhattan = false;
-        if(flagForChose){
+        if (flagForChose) {
             bestFirstSearch(startPoint, endPoint);
-        }
-        else{
-            bestFirstSearch(startNode,endNodes);
+        } else {
+            bestFirstSearch(startNode, endNodes);
         }
 
     }
@@ -691,11 +694,11 @@ let useManhattan = true;
 
 function calculateHeuristic(start, end) {
     if (!start || !end) {
-        console.error('Invalid start or end:', { start, end });
+        console.error('Invalid start or end:', {start, end});
         return Infinity; // Return a large number or handle error
     }
 
-    console.log('Calculating heuristic for:', { start, end });
+    console.log('Calculating heuristic for:', {start, end});
     if (useManhattan) {
         return manhattanDistance(start, end);
     } else {
