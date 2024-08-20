@@ -191,10 +191,12 @@ function euclideanDistance(start, end) {
 }
 
 function bestFirstSearch(start, end) {
-    let priorityQueue = [{
+    let priorityQueue = [
+        {
         cell: grid[start.y][start.x],
         heuristic: calculateHeuristic(start, end)
-    }];
+        }
+    ];
     let visited = new Set();
     let parentMap = new Map();
     let steps = 0;
@@ -297,12 +299,11 @@ function ucs(start, end) {
     let solutionCounterLabel = document.getElementById("s-counter");
 
     function processNextStep() {
-        if (priorityQueue.length === 0) {
+        if (priorityQueue.length === 0) {// handle the case of no solution path
             solutionCounterLabel.textContent = 'Solution Path Steps: 0';
             return;
         }
 
-        // Increment and update step counter
         steps++;
         updateCounter(counterLabel, steps);
 
@@ -327,7 +328,6 @@ function ucs(start, end) {
             }
         } else {
             if (current === grid[end[0].y][end[0].x]) {
-                // Reconstruct path
                 let path = [];
                 while (current !== grid[start.y][start.x]) {
                     path.push(current);
@@ -376,6 +376,7 @@ function ucs(start, end) {
 function aStar(start, end) {
     let priorityQueue = [{
         cell: grid[start.y][start.x],
+        cost: 0,
         heuristic: calculateHeuristic(start, end)
     }];
     let visited = new Set();
@@ -393,7 +394,6 @@ function aStar(start, end) {
             return;
         }
 
-        // Increment and update step counter
         steps++;
         updateCounter(counterLabel, steps);
 
@@ -542,7 +542,7 @@ canvas.addEventListener('click', function (event) {
         const x = Math.floor((event.clientX - rect.left) / cellSize);
         const y = Math.floor((event.clientY - rect.top) / cellSize);
 
-        console.log(`Clicked cell: x=${x}, y=${y}`); // Debugging output
+        console.log(`Clicked cell: x=${x}, y=${y}`);
 
         if (x < 0 || x >= cols || y < 0 || y >= rows) {
             console.error('Click coordinates are out of bounds.');
@@ -695,7 +695,7 @@ let useManhattan = true;
 function calculateHeuristic(start, end) {
     if (!start || !end) {
         console.error('Invalid start or end:', {start, end});
-        return Infinity; // Return a large number or handle error
+        return Infinity;
     }
 
     console.log('Calculating heuristic for:', {start, end});
